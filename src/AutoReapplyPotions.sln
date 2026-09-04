@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoReapplyPotions", "AutoReapplyPotions\AutoReapplyPotions.csproj", "{636BFB2B-97E1-4988-B679-80BD31D6EB33}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoReapplyPotions.Tests", "..\tests\AutoReapplyPotions.Tests\AutoReapplyPotions.Tests.csproj", "{DD5E9014-D628-46F4-8705-8656178B9E1E}"
+EndProject
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|Any CPU = Debug|Any CPU
+        Release|Any CPU = Release|Any CPU
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {636BFB2B-97E1-4988-B679-80BD31D6EB33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {636BFB2B-97E1-4988-B679-80BD31D6EB33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {636BFB2B-97E1-4988-B679-80BD31D6EB33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {636BFB2B-97E1-4988-B679-80BD31D6EB33}.Release|Any CPU.Build.0 = Release|Any CPU
+        {DD5E9014-D628-46F4-8705-8656178B9E1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {DD5E9014-D628-46F4-8705-8656178B9E1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {DD5E9014-D628-46F4-8705-8656178B9E1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {DD5E9014-D628-46F4-8705-8656178B9E1E}.Release|Any CPU.Build.0 = Release|Any CPU
+    EndGlobalSection
+EndGlobal

@@ -1,0 +1,79 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net48</TargetFramework>
+        <RootNamespace>AutoReapplyPotions</RootNamespace>
+        <AssemblyName>AutoReapplyPotions</AssemblyName>
+        <OutputType>Library</OutputType>
+        <LangVersion>latest</LangVersion>
+        <Nullable>disable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
+
+    <Import Project="..\AutoReapplyPotions.Local.props"
+            Condition="Exists('..\AutoReapplyPotions.Local.props')"/>
+
+    <PropertyGroup>
+        <TerrariaExe Condition="'$(TerrariaDirectory)' != ''">$(TerrariaDirectory)\Terraria.exe</TerrariaExe>
+        <TerrariaModderCoreDll Condition="'$(TerrariaDirectory)' != ''">$(TerrariaDirectory)\TerrariaModder\core\TerrariaModder.Core.dll</TerrariaModderCoreDll>
+        <HarmonyDll Condition="'$(TerrariaDirectory)' != ''">$(TerrariaDirectory)\TerrariaModder\core\deps\0Harmony.dll</HarmonyDll>
+        <ManifestPath>$(MSBuildThisFileDirectory)..\..\mod\manifest.json</ManifestPath>
+        <DeployToGame Condition="'$(DeployToGame)' == ''">false</DeployToGame>
+        <TerrariaModDirectory Condition="'$(TerrariaModDirectory)' == '' and '$(TerrariaDirectory)' != ''">$(TerrariaDirectory)\TerrariaModder\mods\auto-reapply-potions</TerrariaModDirectory>
+    </PropertyGroup>
+
+    <Target Name="ValidateLocalConfiguration"
+            BeforeTargets="ResolveReferences">
+        <Error Condition="'$(TerrariaDirectory)' == ''"
+               Text="TerrariaDirectory is not configured. Create src\AutoReapplyPotions.Local.props from docs\AutoReapplyPotions.Local.props.example and set the Terraria installation path."/>
+        <Error Condition="'$(TerrariaExe)' != '' and !Exists('$(TerrariaExe)')"
+               Text="Terraria.exe was not found at '$(TerrariaExe)'. Update TerrariaDirectory in src\AutoReapplyPotions.Local.props."/>
+        <Error Condition="'$(TerrariaModderCoreDll)' != '' and !Exists('$(TerrariaModderCoreDll)')"
+               Text="TerrariaModder.Core.dll was not found at '$(TerrariaModderCoreDll)'. Update TerrariaDirectory in src\AutoReapplyPotions.Local.props."/>
+        <Error Condition="'$(HarmonyDll)' != '' and !Exists('$(HarmonyDll)')"
+               Text="0Harmony.dll was not found at '$(HarmonyDll)'. Update TerrariaDirectory in src\AutoReapplyPotions.Local.props."/>
+        <Error Condition="'$(XnaFrameworkGameDll)' == ''"
+               Text="XnaFrameworkGameDll is not configured. Set it in src\AutoReapplyPotions.Local.props."/>
+        <Error Condition="'$(XnaFrameworkGameDll)' != '' and !Exists('$(XnaFrameworkGameDll)')"
+               Text="Microsoft.Xna.Framework.Game.dll was not found at '$(XnaFrameworkGameDll)'. Update XnaFrameworkGameDll in src\AutoReapplyPotions.Local.props."/>
+        <Error Condition="'$(DeployToGame)' == 'true' and '$(TerrariaModDirectory)' == ''"
+               Text="TerrariaModDirectory is not configured while DeployToGame is enabled."/>
+    </Target>
+
+    <ItemGroup Condition="'$(TerrariaDirectory)' != ''">
+        <Reference Include="Terraria">
+            <HintPath>$(TerrariaExe)</HintPath>
+            <Private>false</Private>
+        </Reference>
+
+        <Reference Include="TerrariaModder.Core">
+            <HintPath>$(TerrariaModderCoreDll)</HintPath>
+            <Private>false</Private>
+        </Reference>
+
+        <Reference Include="0Harmony">
+            <HintPath>$(HarmonyDll)</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(XnaFrameworkGameDll)' != ''">
+        <Reference Include="Microsoft.Xna.Framework.Game">
+            <HintPath>$(XnaFrameworkGameDll)</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <Target Name="DeployModToGame"
+            AfterTargets="Build"
+            Condition="'$(DeployToGame)' == 'true' and '$(TerrariaModDirectory)' != ''">
+        <Error Condition="!Exists('$(ManifestPath)')"
+               Text="TerrariaModder manifest was not found at '$(ManifestPath)'."/>
+        <MakeDir Directories="$(TerrariaModDirectory)"/>
+        <Copy SourceFiles="$(TargetPath);$(ManifestPath)"
+              DestinationFolder="$(TerrariaModDirectory)"
+              SkipUnchangedFiles="true"/>
+    </Target>
+</Project>

@@ -1,0 +1,25 @@
+<Project>
+    <PropertyGroup>
+        <!--
+        Set this to the root directory of your local Terraria installation.
+        Example:
+        E:\SteamLibrary\steamapps\common\Terraria
+        -->
+        <TerrariaDirectory>C:\Path\To\Terraria</TerrariaDirectory>
+
+        <!--
+        Terraria 1.4.5.8 / TerrariaModder 0.4.0 development requires the XNA Framework Game reference.
+        This is the common Windows GAC location; update it if your installation differs.
+        -->
+        <XnaFrameworkGameDll>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Game\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Game.dll</XnaFrameworkGameDll>
+
+        <!-- Enable automatic deployment after a successful build when desired. -->
+        <DeployToGame>false</DeployToGame>
+
+        <!--
+        Development deployment directory used when DeployToGame is true.
+        This default follows TerrariaModder's mods/<mod-id>/ package layout.
+        -->
+        <TerrariaModDirectory>$(TerrariaDirectory)\TerrariaModder\mods\auto-reapply-potions</TerrariaModDirectory>
+    </PropertyGroup>
+</Project>
