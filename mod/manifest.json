@@ -1,8 +1,9 @@
 {
     "id": "auto-reapply-potions",
     "name": "Auto Reapply Potions",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "author": "Escarval",
     "description": "Automatically reapplies potions, food, and flasks when their buffs expire, with whitelist/blacklist filtering and an in-game filter editor.",
-    "entry_dll": "AutoReapplyPotions.dll"
+    "entry_dll": "AutoReapplyPotions.dll",
+    "framework_version": ">=0.4.1"
 }

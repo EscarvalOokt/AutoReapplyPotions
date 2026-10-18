@@ -25,7 +25,8 @@ namespace AutoReapplyPotions
 
         private static bool IsFood(Item item)
         {
-            bool isFoodBuff = item.buffType == BuffID.WellFed || item.buffType == BuffID.WellFed2 ||
+            bool isFoodBuff = item.buffType == BuffID.WellFed ||
+                              item.buffType == BuffID.WellFed2 ||
                               item.buffType == BuffID.WellFed3;
             return isFoodBuff;
         }

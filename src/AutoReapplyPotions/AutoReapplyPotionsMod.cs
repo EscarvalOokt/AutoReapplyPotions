@@ -18,7 +18,7 @@ namespace AutoReapplyPotions
 
         public string Id => "auto-reapply-potions";
         public string Name => "Auto Reapply Potions";
-        public string Version => "1.1.0";
+        public string Version => "1.2.0";
 
         public void Initialize(ModContext context)
         {
@@ -67,12 +67,17 @@ namespace AutoReapplyPotions
         {
             BuffReapplyDetector.Reset();
 
-            _filterUi?.Unload();
-            _filterUi = null;
-
-            IsEnabled = true;
-            Config = null;
-            Context = null;
+            try
+            {
+                _filterUi?.Unload();
+            }
+            finally
+            {
+                _filterUi = null;
+                IsEnabled = true;
+                Config = null;
+                Context = null;
+            }
         }
 
         public void OnContentReady(ModContext _)

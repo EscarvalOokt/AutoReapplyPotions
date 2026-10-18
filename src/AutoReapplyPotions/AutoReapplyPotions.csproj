@@ -10,10 +10,13 @@
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <TerrariaWindowKitIncludeCore>true</TerrariaWindowKitIncludeCore>
     </PropertyGroup>
 
     <Import Project="..\AutoReapplyPotions.Local.props"
             Condition="Exists('..\AutoReapplyPotions.Local.props')"/>
+
+    <Import Project="..\..\..\TerrariaWindowKit\src\TerrariaWindowKit.Source.projitems" Label="Shared"/>
 
     <PropertyGroup>
         <TerrariaExe Condition="'$(TerrariaDirectory)' != ''">$(TerrariaDirectory)\Terraria.exe</TerrariaExe>
@@ -34,6 +37,10 @@
                Text="TerrariaModder.Core.dll was not found at '$(TerrariaModderCoreDll)'. Update TerrariaDirectory in src\AutoReapplyPotions.Local.props."/>
         <Error Condition="'$(HarmonyDll)' != '' and !Exists('$(HarmonyDll)')"
                Text="0Harmony.dll was not found at '$(HarmonyDll)'. Update TerrariaDirectory in src\AutoReapplyPotions.Local.props."/>
+        <Error Condition="'$(XnaFrameworkDll)' == ''"
+               Text="XnaFrameworkDll is not configured. Set it in src\AutoReapplyPotions.Local.props."/>
+        <Error Condition="'$(XnaFrameworkDll)' != '' and !Exists('$(XnaFrameworkDll)')"
+               Text="Microsoft.Xna.Framework.dll was not found at '$(XnaFrameworkDll)'. Update XnaFrameworkDll in src\AutoReapplyPotions.Local.props."/>
         <Error Condition="'$(XnaFrameworkGameDll)' == ''"
                Text="XnaFrameworkGameDll is not configured. Set it in src\AutoReapplyPotions.Local.props."/>
         <Error Condition="'$(XnaFrameworkGameDll)' != '' and !Exists('$(XnaFrameworkGameDll)')"
@@ -55,6 +62,13 @@
 
         <Reference Include="0Harmony">
             <HintPath>$(HarmonyDll)</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(XnaFrameworkDll)' != ''">
+        <Reference Include="Microsoft.Xna.Framework">
+            <HintPath>$(XnaFrameworkDll)</HintPath>
             <Private>false</Private>
         </Reference>
     </ItemGroup>

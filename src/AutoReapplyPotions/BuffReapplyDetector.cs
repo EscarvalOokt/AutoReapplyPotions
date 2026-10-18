@@ -52,7 +52,7 @@ namespace AutoReapplyPotions
                     if (!ShouldAutoReapplyBuff(buffId))
                         continue;
 
-                    if (PotionReapplyHelper.TryReapplyBuffFromInventory(player, buffId))
+                    if (PotionReapplyHelper.TryReapplyBuff(player, buffId))
                         ModLog.Info($"Reapplied buff {buffId}.");
                 }
             }
