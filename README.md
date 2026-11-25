@@ -4,8 +4,6 @@
 
 **Keep your buffs active without constantly reusing consumables.**
 
-[Download on Nexus Mods](https://www.nexusmods.com/terraria/mods/169)
-
 Auto Reapply Potions is a quality-of-life mod for Terraria that automatically reapplies supported consumable buffs when they expire.
 
 When a supported timed buff ends, the mod first looks for an allowed consumable in the local player's inventory. If none is found, it can use a matching item from an accessible Void Bag. Each reapplication consumes one item from the selected stack.
@@ -26,19 +24,22 @@ It supports common buff sources such as potions, food, and weapon flasks, and in
 
 Auto Reapply Potions tracks active timed buffs on the local player.
 
-When a supported buff disappears:
+When a supported buff reaches the end of its timer:
 
 1. The mod searches the player's inventory for the first supported item allowed by the current filter.
 2. If no allowed inventory item matches, it checks an accessible Void Bag for an item allowed by the same filter.
 3. The buff is reapplied using the selected item's buff duration, and one item is consumed from that inventory or Void Bag stack.
 
-Buffs are only reapplied after the previous effect has fully expired. Existing remaining duration is not overwritten.
+Removing a buff early or displacing it when buff slots are full leaves the consumable stack untouched. While the player is cursed, crowd-controlled, spectating, or waiting for an inventory operation, the mod skips that reapplication.
+
+A Void Bag must be available and unlocked in the player's inventory for its stored items to be used. The mod does not access it during pending inventory operations or queue a later reapplication if it is unavailable when a buff expires.
 
 The mod does not automatically reapply:
 
 - Debuffs.
 - Potion Sickness.
 - Mana Sickness.
+- Consumables that also restore health or mana, including Bottled Honey.
 - Permanent buffs whose remaining duration does not decrease.
 - Items that do not use Terraria's supported consumable buff-item behavior.
 
@@ -62,7 +63,7 @@ Only selected items may be used automatically. An empty whitelist prevents autom
 
 The Filter Editor includes:
 
-- Search by item name, ID, or category.
+- Search by item name, ID, or category within the selected category. An empty search result keeps that category selected.
 - Catalog and Selected views, with available Potions, Food, Flasks, and Other categories.
 - **Select results**, **Clear results**, and **Clear all** actions. Select results and Clear results affect all matching items, including those outside the visible scroll area.
 - Item previews and tooltips.
@@ -83,114 +84,70 @@ Default keybinds:
 
 Keybinds can be configured through TerrariaModder.
 
+## Settings
+
+Press **F6** and select **Auto Reapply Potions** to open its settings.
+
+- **Enabled** turns automatic reapplication on or off. It is on by default.
+- **Debug Mode** enables the two buff timer shortcuts listed under [Controls](#controls). It is off by default.
+- **Item Filter Mode** defaults to **Disabled**. Use the [Filter Editor](#item-filtering) to choose a mode and manage the **Filtered Item IDs** list, which starts empty.
+
 ## Requirements
 
-- Terraria 1.4.5.8
-- TerrariaModder Core 0.4.1 or newer
-
-## Compatibility
-
-Auto Reapply Potions is designed primarily around standard Terraria consumable buff items.
-
-The mod can be added to or removed from an existing character or world without save cleanup. It does not add persistent world objects, custom items, or other save-dependent content.
-
-Consumables added or heavily modified by other mods are not guaranteed to work. Items that use custom buff systems, scripted effects, or non-standard consumable behavior may not be recognized correctly.
-
-A Void Bag must be available and unlocked in the player's inventory for its stored items to be used. The mod does not access it during pending inventory operations or queue a later reapplication if it is unavailable when a buff expires.
-
-Multiplayer synchronization has not been separately validated.
-
-Automatically used items are consumed from their existing inventory or Void Bag stacks.
+- **Terraria 1.4.6.1** for Windows.
+- **TerrariaModder Core 0.4.3 or newer.** Choose a Core release that meets this requirement from [Nexus Mods](https://www.nexusmods.com/terraria/mods/135?tab=files) or [GitHub Releases](https://github.com/Inidar1/terraria-modder/releases).
+- [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/net48).
 
 ## Installation
 
-1. Install and configure [TerrariaModder](https://www.nexusmods.com/terraria/mods/135) using the instructions on its download page.
-2. Launch Terraria through `TerrariaInjector.exe` at least once so TerrariaModder can create its `mods` directory.
-3. Copy the `auto-reapply-potions` folder into:
+1. Close Terraria. Install any missing dependencies listed under [Requirements](#requirements). To install TerrariaModder Core manually, extract its archive into the folder containing `Terraria.exe`.
+2. Download the Auto Reapply Potions archive for your Terraria version from either source.
+
+   - On [Nexus Mods](https://www.nexusmods.com/terraria/mods/169?tab=files), select **Manual download** for the main file.
+   - On the [latest GitHub release](https://github.com/EscarvalOokt/AutoReapplyPotions/releases/latest), download the packaged mod from **Assets**.
+
+3. In your Terraria installation folder, open `TerrariaModder\mods\`. Create the `mods` folder if needed.
+4. Open the downloaded mod archive and copy the entire `auto-reapply-potions` folder into `mods`. If you are updating, replace the existing DLL and manifest with the copies from the new archive.
+5. Launch `TerrariaInjector.exe` from the Terraria installation folder.
+6. Enter a world and press **Alt + 2** to open the Filter Editor.
+
+After installation, the mod files should be in the following locations.
 
 ```text
-Terraria/TerrariaModder/mods/
+Terraria\
+├── Terraria.exe
+├── TerrariaInjector.exe
+└── TerrariaModder\
+    └── mods\
+        └── auto-reapply-potions\
+            ├── AutoReapplyPotions.dll
+            └── manifest.json
 ```
 
-The installed mod directory should contain:
+## Compatibility
 
-```text
-auto-reapply-potions/
-├── AutoReapplyPotions.dll
-└── manifest.json
-```
+### Existing characters and worlds
 
-Launch the game again through `TerrariaInjector.exe`.
+You can use Auto Reapply Potions with an existing character and world.
 
-The mod is enabled by default.
+### Removing the mod
 
-Use **F6 → Auto Reapply Potions** to access its TerrariaModder settings, or press **Alt + 2** in game to open the Filter Editor.
+Close Terraria and remove the `auto-reapply-potions` folder from `TerrariaModder\mods\`. You can continue playing with the same character and world without save cleanup.
 
-## Development
+### Multiplayer
 
-Building from source requires a .NET Framework 4.8 development environment.
+Automatic reapplication runs for the local player. Multiplayer synchronization has not been separately verified.
 
-A [TerrariaWindowKit](https://github.com/EscarvalOokt/TerrariaWindowKit) v1.1.0 checkout is also required alongside the AutoReapplyPotions checkout. The production project imports `../TerrariaWindowKit/src/TerrariaWindowKit.Source.projitems` relative to the AutoReapplyPotions repository root, compiling the toolkit from source rather than deploying a separate toolkit DLL.
+### Saved progress
 
-### Local configuration
+The mod tracks no separate progression. Each automatic reapplication consumes one item from the character's existing inventory or Void Bag stack. TerrariaModder saves the mod settings, including the item filter.
 
-Copy:
+### Other mods
 
-```text
-docs/AutoReapplyPotions.Local.props.example
-```
-
-to:
-
-```text
-src/AutoReapplyPotions.Local.props
-```
-
-Then configure:
-
-* `TerrariaDirectory` — root directory of the local Terraria installation.
-* `XnaFrameworkDll` — local `Microsoft.Xna.Framework.dll` reference used by the WindowKit Core integration.
-* `XnaFrameworkGameDll` — local `Microsoft.Xna.Framework.Game.dll` reference used to compile against Terraria.
-* `DeployToGame` — set to `true` to enable post-build deployment.
-* `TerrariaModDirectory` — target `TerrariaModder/mods/auto-reapply-potions` directory.
-
-The local props file contains machine-specific paths and is intentionally excluded from Git.
-
-### Build
-
-Build the production solution in Release configuration:
-
-```bash
-dotnet build src/AutoReapplyPotions.sln -c Release
-```
-
-When `DeployToGame` is enabled, the production project copies `AutoReapplyPotions.dll` and `mod/manifest.json` to the configured TerrariaModder mod directory after a successful build.
-
-### Tests
-
-Run the NUnit test project with:
-
-```bash
-dotnet test tests/AutoReapplyPotions.Tests/AutoReapplyPotions.Tests.csproj -c Release
-```
-
-The automated suite covers test-pipeline discovery and the deterministic Search click-away input policy. Behavior that depends on the complete Terraria, TerrariaModder, XNA, or Harmony runtime requires separate in-game validation. Automated tests do not establish runtime compatibility.
-
-## Repository structure
-
-```text
-docs/    Project documentation and development configuration examples
-mod/     TerrariaModder package metadata
-src/     Production source and solution
-tests/   Automated tests
-```
+Auto Reapply Potions supports items that use Terraria's standard consumable buff behavior. Items that apply buffs through custom systems or scripted effects may not be recognized.
 
 ## Technical documentation
 
-* [Architecture](docs/architecture.md)
-* [Testing policy](docs/testing.md)
-
-## Links
-
-* [Nexus Mods](https://www.nexusmods.com/terraria/mods/169)
-* [GitHub Releases](https://github.com/EscarvalOokt/AutoReapplyPotions/releases)
+- [Development guide](docs/development.md)
+- [Architecture](docs/architecture.md)
+- [Testing policy](docs/testing.md)

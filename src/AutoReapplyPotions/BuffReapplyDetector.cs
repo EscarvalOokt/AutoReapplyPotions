@@ -1,28 +1,34 @@
-using System.Collections.Generic;
+using System;
 using Terraria;
 
 namespace AutoReapplyPotions
 {
     internal static class BuffReapplyDetector
     {
-        private static readonly Dictionary<int, BuffSnapshot> _beforeUpdateSnapshots =
-            new Dictionary<int, BuffSnapshot>();
+        [ThreadStatic] private static UpdateState _current;
 
-        private static readonly HashSet<int> _reapplyingPlayers = new HashSet<int>();
-
-        public static void Reset()
+        public static bool BeginUpdate(Player player)
         {
-            _beforeUpdateSnapshots.Clear();
-            _reapplyingPlayers.Clear();
+            if (_current.Player != null || !ShouldProcessPlayer(player))
+                return false;
+
+            var candidates = BuffSnapshot.Capture(player.buffType, player.buffTime);
+            if (candidates.Count == 0)
+                return false;
+
+            _current = new UpdateState { Player = player, Candidates = candidates };
+            return true;
         }
 
-        public static void CaptureBeforeUpdate(Player player)
+        public static void BeforeRemoval(Player player)
         {
-            if (!ShouldProcessPlayer(player))
+            if (_current.Player != player)
                 return;
 
-            var snapshot = new BuffSnapshot(player);
-            _beforeUpdateSnapshots[player.whoAmI] = snapshot;
+            _current.ObservedAtZero = _current.Candidates.FindExpired(
+                player.buffType,
+                player.buffTime,
+                _current.ObservedAtZero);
         }
 
         public static void ProcessAfterUpdate(Player player)
@@ -30,89 +36,37 @@ namespace AutoReapplyPotions
             if (!ShouldProcessPlayer(player))
                 return;
 
-            if (!AutoReapplyPotionsMod.IsEnabled)
-                return;
-
-            int playerId = player.whoAmI;
-
-            if (!_beforeUpdateSnapshots.TryGetValue(playerId, out BuffSnapshot snapshot))
-                return;
-
-            if (_reapplyingPlayers.Contains(playerId))
-                return;
-
-            try
+            // Resolve all expirations before reapplying food can compact the slots again.
+            BuffSnapshot expired = _current.Candidates.FindExpired(
+                player.buffType,
+                player.buffTime,
+                _current.ObservedAtZero);
+            for (var i = 0; i < expired.Count; i++)
             {
-                _reapplyingPlayers.Add(playerId);
-
-                HashSet<int> expiredBuffs = FindExpiredBuffs(player, snapshot);
-
-                foreach (int buffId in expiredBuffs)
-                {
-                    if (!ShouldAutoReapplyBuff(buffId))
-                        continue;
-
-                    if (PotionReapplyHelper.TryReapplyBuff(player, buffId))
-                        ModLog.Info($"Reapplied buff {buffId}.");
-                }
+                int buffId = expired[i];
+                if (AutoReapplyRules.IsSupportedBuff(buffId) && PotionReapplyHelper.TryReapplyBuff(player, buffId))
+                    ModLog.Info($"Reapplied buff {buffId}.");
             }
-            finally
-            {
-                _beforeUpdateSnapshots.Remove(playerId);
-                _reapplyingPlayers.Remove(playerId);
-            }
+        }
+
+        public static void EndUpdate()
+        {
+            _current = default;
         }
 
         private static bool ShouldProcessPlayer(Player player)
         {
-            if (player == null)
-                return false;
-
-            if (Main.gameMenu)
-                return false;
-
-            bool isInactiveOrDead = !player.active || player.dead;
-            if (isInactiveOrDead)
-                return false;
-
-            return player.whoAmI == Main.myPlayer;
+            return AutoReapplyPotionsMod.CanAutoReapply &&
+                   player is { active: true, dead: false } &&
+                   !Main.gameMenu &&
+                   player.whoAmI == Main.myPlayer;
         }
 
-        private static HashSet<int> FindExpiredBuffs(Player player, BuffSnapshot snapshot)
+        private struct UpdateState
         {
-            HashSet<int> before = CollectActiveTimedBuffs(snapshot.BuffTypes, snapshot.BuffTimes);
-            HashSet<int> after = CollectActiveTimedBuffs(player.buffType, player.buffTime);
-
-            before.ExceptWith(after);
-            return before;
-        }
-
-        private static HashSet<int> CollectActiveTimedBuffs(int[] buffTypes, int[] buffTimes)
-        {
-            var result = new HashSet<int>();
-
-            int count = buffTypes.Length < buffTimes.Length ? buffTypes.Length : buffTimes.Length;
-
-            for (var i = 0; i < count; i++)
-            {
-                int buffType = buffTypes[i];
-                int buffTime = buffTimes[i];
-
-                if (buffType <= 0)
-                    continue;
-
-                if (buffTime <= 0)
-                    continue;
-
-                result.Add(buffType);
-            }
-
-            return result;
-        }
-
-        private static bool ShouldAutoReapplyBuff(int buffId)
-        {
-            return AutoReapplyRules.IsSupportedBuff(buffId);
+            public Player Player;
+            public BuffSnapshot Candidates;
+            public BuffSnapshot ObservedAtZero;
         }
     }
 }

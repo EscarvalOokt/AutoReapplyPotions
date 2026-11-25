@@ -99,6 +99,15 @@ namespace AutoReapplyPotions
             return contains;
         }
 
+        public static ItemFilterMode ParseMode(string raw)
+        {
+            if (Enum.TryParse(raw, ignoreCase: true, out ItemFilterMode mode) &&
+                Enum.IsDefined(typeof(ItemFilterMode), mode))
+                return mode;
+
+            return ItemFilterMode.Disabled;
+        }
+
         public static List<int> ParseItemIds(string raw)
         {
             var result = new List<int>();

@@ -35,6 +35,9 @@ namespace AutoReapplyPotions
             if (!item.consumable)
                 return false;
 
+            if (item.healLife > 0 || item.healMana > 0)
+                return false;
+
             if (item.buffType <= 0)
                 return false;
 

@@ -86,7 +86,7 @@ namespace AutoReapplyPotions
         {
             EnsureBuilt();
 
-            return _itemsById.Values.OrderBy(x => x.ItemId).ToList();
+            return _itemsById.Values.OrderBy(x => x.Category).ThenBy(x => x.ItemName).ThenBy(x => x.ItemId).ToList();
         }
 
         private static void EnsureBuilt()

@@ -1,9 +1,11 @@
 {
     "id": "auto-reapply-potions",
     "name": "Auto Reapply Potions",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "author": "Escarval",
-    "description": "Automatically reapplies potions, food, and flasks when their buffs expire, with whitelist/blacklist filtering and an in-game filter editor.",
+    "description": "Automatically reapplies potions, food, and flasks from your inventory or Void Bag when their buffs expire. Choose which items to use in the in-game filter editor.",
     "entry_dll": "AutoReapplyPotions.dll",
-    "framework_version": ">=0.4.1"
+    "homepage": "https://www.nexusmods.com/terraria/mods/169",
+    "terraria_version": "1.4.6.1",
+    "framework_version": ">=0.4.3"
 }

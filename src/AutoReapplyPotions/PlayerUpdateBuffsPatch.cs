@@ -9,15 +9,23 @@ namespace AutoReapplyPotions
     internal static class PlayerUpdateBuffsPatch
     {
         [HarmonyPrefix]
-        public static void Prefix(Player __instance)
+        public static void Prefix(Player __instance, out bool __state)
         {
-            BuffReapplyDetector.CaptureBeforeUpdate(__instance);
+            __state = BuffReapplyDetector.BeginUpdate(__instance);
         }
 
         [HarmonyPostfix]
-        public static void Postfix(Player __instance)
+        public static void Postfix(Player __instance, bool __state)
         {
-            BuffReapplyDetector.ProcessAfterUpdate(__instance);
+            if (__state)
+                BuffReapplyDetector.ProcessAfterUpdate(__instance);
+        }
+
+        [HarmonyFinalizer]
+        public static void Finalizer(bool __state)
+        {
+            if (__state)
+                BuffReapplyDetector.EndUpdate();
         }
     }
 }

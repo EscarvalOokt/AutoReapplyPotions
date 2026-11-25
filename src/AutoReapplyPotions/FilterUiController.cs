@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Escarval.TerrariaWindowKit;
 using Terraria.ID;
 using TerrariaModder.Core;
@@ -26,31 +25,29 @@ namespace AutoReapplyPotions
         private const int CategoryIconButtonWidth = 32;
         private const int CategoryButtonSpacing = 4;
 
-        private static readonly CatalogCategoryFilter[] _categoryOrder =
+        private static readonly SupportedBuffItemCategory?[] _categoryOrder =
         [
-            CatalogCategoryFilter.All,
-            CatalogCategoryFilter.Potions,
-            CatalogCategoryFilter.Food,
-            CatalogCategoryFilter.Flasks,
-            CatalogCategoryFilter.Other
+            null, // All categories
+            SupportedBuffItemCategory.Potion,
+            SupportedBuffItemCategory.Food,
+            SupportedBuffItemCategory.Flask,
+            SupportedBuffItemCategory.Other
         ];
 
-        private readonly HashSet<CatalogCategoryFilter> _availableCategoryTabs = new HashSet<CatalogCategoryFilter>();
-
         private readonly ScrollView _catalogScroll = new ScrollView();
+
+        private readonly FilterEditorResults _results = new FilterEditorResults();
         private readonly ScrollView _selectedScroll = new ScrollView();
-        private CatalogCategoryFilter _activeCategory = CatalogCategoryFilter.All;
+        private SupportedBuffItemCategory? _activeCategory;
 
         private int _activeTab;
 
         private CoreWindowBackend _backend;
         private List<SupportedBuffItemInfo> _catalog = new List<SupportedBuffItemInfo>();
-        private List<SupportedBuffItemInfo> _filteredCatalog = new List<SupportedBuffItemInfo>();
         private int _listTopOffset = -1;
         private ItemFilterMode _mode = ItemFilterMode.Disabled;
         private TextInput _searchInput;
         private string _searchText = string.Empty;
-        private List<SupportedBuffItemInfo> _selectedItems = new List<SupportedBuffItemInfo>();
         private bool _wasMouseLeftDown;
         private WindowHost _window;
 
@@ -82,9 +79,7 @@ namespace AutoReapplyPotions
                     _listTopOffset = -1;
 
                     _catalog.Clear();
-                    _filteredCatalog.Clear();
-                    _selectedItems.Clear();
-                    _availableCategoryTabs.Clear();
+                    _results.Clear();
                 }
             }
         }
@@ -163,65 +158,13 @@ namespace AutoReapplyPotions
 
         private void RebuildLists(bool resetScroll)
         {
-            RebuildAvailableCategoryTabs();
-            bool categoryChanged = !_availableCategoryTabs.Contains(_activeCategory);
-            if (categoryChanged)
-                _activeCategory = CatalogCategoryFilter.All;
+            _results.Rebuild(_catalog, _activeCategory, _searchText, _activeTab != 0, ItemFilterSettings.Contains);
 
-            IEnumerable<SupportedBuffItemInfo> catalogQuery = ApplyCategoryFilter(_catalog, _activeCategory);
-            catalogQuery = ApplySearchFilter(catalogQuery, _searchText);
-
-            _filteredCatalog = catalogQuery.OrderBy(x => x.Category)
-                .ThenBy(x => x.ItemName)
-                .ThenBy(x => x.ItemId)
-                .ToList();
-
-            IEnumerable<SupportedBuffItemInfo> selectedQuery =
-                _catalog.Where(x => ItemFilterSettings.Contains(x.ItemId));
-            selectedQuery = ApplyCategoryFilter(selectedQuery, _activeCategory);
-            selectedQuery = ApplySearchFilter(selectedQuery, _searchText);
-
-            _selectedItems = selectedQuery.OrderBy(x => x.Category)
-                .ThenBy(x => x.ItemName)
-                .ThenBy(x => x.ItemId)
-                .ToList();
-
-            if (resetScroll || categoryChanged)
+            if (resetScroll)
             {
                 _catalogScroll.ResetScroll();
                 _selectedScroll.ResetScroll();
             }
-        }
-
-        private void RebuildAvailableCategoryTabs()
-        {
-            _availableCategoryTabs.Clear();
-            _availableCategoryTabs.Add(CatalogCategoryFilter.All);
-
-            var categories =
-                new HashSet<SupportedBuffItemCategory>(GetCurrentCategoryTabSource().Select(x => x.Category));
-
-            if (categories.Contains(SupportedBuffItemCategory.Potion))
-                _availableCategoryTabs.Add(CatalogCategoryFilter.Potions);
-
-            if (categories.Contains(SupportedBuffItemCategory.Food))
-                _availableCategoryTabs.Add(CatalogCategoryFilter.Food);
-
-            if (categories.Contains(SupportedBuffItemCategory.Flask))
-                _availableCategoryTabs.Add(CatalogCategoryFilter.Flasks);
-
-            if (categories.Contains(SupportedBuffItemCategory.Other))
-                _availableCategoryTabs.Add(CatalogCategoryFilter.Other);
-        }
-
-        private IEnumerable<SupportedBuffItemInfo> GetCurrentCategoryTabSource()
-        {
-            if (_activeTab == 0)
-                return ApplySearchFilter(_catalog, _searchText);
-
-            IEnumerable<SupportedBuffItemInfo> selectedSource =
-                _catalog.Where(x => ItemFilterSettings.Contains(x.ItemId));
-            return ApplySearchFilter(selectedSource, _searchText);
         }
 
         private void SaveCurrentSettings()
@@ -238,7 +181,7 @@ namespace AutoReapplyPotions
                     config.Save();
                 }
 
-                ModLog.Info($"Filter UI saved. Mode={_mode}, Count={ItemFilterSettings.FilteredItemIds.Count}");
+                ModLog.Info($"Filter applied. Mode={_mode}, Count={ItemFilterSettings.FilteredItemIds.Count}");
             }
             catch (Exception ex)
             {
@@ -255,13 +198,8 @@ namespace AutoReapplyPotions
             int mouseX = WidgetInput.MouseX;
             int mouseY = WidgetInput.MouseY;
             bool mouseLeftDown = UIRenderer.MouseLeft;
-            bool searchClickAway = FilterEditorClickAwayPolicy.IsEligiblePress(
-                _searchInput?.IsFocused == true,
-                WidgetInput.BlockInput,
-                WidgetInput.MouseLeftClick,
-                mouseLeftDown,
-                _wasMouseLeftDown);
-            _wasMouseLeftDown = mouseLeftDown;
+            // Header and mode buttons may consume this click before the search field draws.
+            bool mouseLeftClick = WidgetInput.MouseLeftClick;
             window.UpdatePointer(mouseX, mouseY, mouseLeftDown, WidgetInput.BlockInput);
             WindowBounds bounds = window.Bounds;
 
@@ -350,8 +288,6 @@ namespace AutoReapplyPotions
                 return;
             }
 
-            _searchInput?.Update();
-
             try
             {
                 int contentX = bounds.X + PanelPadding;
@@ -361,7 +297,7 @@ namespace AutoReapplyPotions
 
                 int currentY = contentY;
 
-                currentY = DrawFilterModeAndSearch(contentX, currentY, contentWidth, searchClickAway);
+                currentY = DrawFilterModeAndSearch(contentX, currentY, contentWidth, mouseLeftClick);
                 currentY += SectionSpacing;
 
                 currentY = DrawMainTabs(contentX, currentY, contentWidth);
@@ -404,7 +340,7 @@ namespace AutoReapplyPotions
                 : (int)WheelDisposition.PassThrough;
         }
 
-        private int DrawFilterModeAndSearch(int x, int y, int width, bool searchClickAway)
+        private int DrawFilterModeAndSearch(int x, int y, int width, bool mouseLeftClick)
         {
             var layout = new StackLayout(x, y, width, spacing: SectionSpacing);
 
@@ -454,6 +390,17 @@ namespace AutoReapplyPotions
                 });
 
             int searchY = layout.CurrentY;
+            bool mouseLeftDown = UIRenderer.MouseLeft;
+            if (FilterEditorClickAwayPolicy.ShouldReleaseFocus(
+                    _searchInput.IsFocused,
+                    WidgetInput.IsMouseOver(layout.X, searchY, width, ControlHeight),
+                    mouseLeftClick,
+                    mouseLeftDown,
+                    _wasMouseLeftDown))
+                _searchInput.Unfocus();
+
+            _wasMouseLeftDown = mouseLeftDown;
+            _searchInput.Update();
             string newSearch = _searchInput.Draw(layout.X, searchY, width, height: ControlHeight);
 
             if (width > 0)
@@ -465,11 +412,6 @@ namespace AutoReapplyPotions
                     ControlHeight,
                     _searchInput.IsFocused ? UIColors.Accent : UIColors.Border);
             }
-
-            if (searchClickAway &&
-                _searchInput.IsFocused &&
-                !WidgetInput.IsMouseOver(layout.X, searchY, width, ControlHeight))
-                _searchInput.Unfocus();
 
             layout.Advance(ControlHeight);
 
@@ -541,7 +483,7 @@ namespace AutoReapplyPotions
 
                 if (_activeTab == 0)
                 {
-                    foreach (SupportedBuffItemInfo item in _filteredCatalog)
+                    foreach (SupportedBuffItemInfo item in _results.Catalog)
                     {
                         if (ItemFilterSettings.Add(item.ItemId))
                             changed = true;
@@ -549,7 +491,7 @@ namespace AutoReapplyPotions
                 }
                 else
                 {
-                    foreach (SupportedBuffItemInfo item in _selectedItems)
+                    foreach (SupportedBuffItemInfo item in _results.Selected)
                     {
                         if (ItemFilterSettings.Remove(item.ItemId))
                             changed = true;
@@ -604,14 +546,14 @@ namespace AutoReapplyPotions
                 return y;
 
             int groupWidth = CategoryButtonSpacing * (_categoryOrder.Length - 1);
-            foreach (CatalogCategoryFilter category in _categoryOrder)
+            foreach (SupportedBuffItemCategory? category in _categoryOrder)
                 groupWidth += GetCategoryButtonWidth(category);
 
             int startX = x + Math.Max(0, (width - groupWidth) / 2);
             int currentX = startX;
             int rowY = y;
 
-            foreach (CatalogCategoryFilter category in _categoryOrder)
+            foreach (SupportedBuffItemCategory? category in _categoryOrder)
             {
                 int desiredWidth = GetCategoryButtonWidth(category);
                 int buttonWidth = Math.Min(width, desiredWidth);
@@ -623,7 +565,7 @@ namespace AutoReapplyPotions
                     rowY += CategoryButtonHeight + CategoryButtonSpacing;
                 }
 
-                bool enabled = _availableCategoryTabs.Contains(category);
+                bool enabled = !category.HasValue || _results.AvailableCategories.Contains(category.Value);
                 bool active = _activeCategory == category;
                 bool hovered = !WidgetInput.BlockInput &&
                                WidgetInput.IsMouseOver(currentX, rowY, buttonWidth, CategoryButtonHeight);
@@ -651,7 +593,9 @@ namespace AutoReapplyPotions
                 }
                 else if (itemId == 0)
                 {
-                    string text = TextUtil.Truncate(GetCategoryLabel(category), Math.Max(0, buttonWidth - 4));
+                    string text = TextUtil.Truncate(
+                        FilterEditorResults.GetCategoryLabel(category),
+                        Math.Max(0, buttonWidth - 4));
                     int textWidth = UIRenderer.MeasureText(text);
                     if (textWidth <= buttonWidth - 4)
                     {
@@ -664,7 +608,7 @@ namespace AutoReapplyPotions
                 }
 
                 if (hovered)
-                    Tooltip.Set(enabled ? GetCategoryLabel(category) : GetCategoryLabel(category) + " (no results)");
+                    Tooltip.Set(FilterEditorResults.GetCategoryLabel(category) + (enabled ? "" : " (no results)"));
 
                 if (enabled && hovered && WidgetInput.MouseLeftClick && category != _activeCategory)
                 {
@@ -679,46 +623,25 @@ namespace AutoReapplyPotions
             return rowY + CategoryButtonHeight;
         }
 
-        private static int GetCategoryButtonWidth(CatalogCategoryFilter category)
+        private static int GetCategoryButtonWidth(SupportedBuffItemCategory? category)
         {
             return category switch
             {
-                CatalogCategoryFilter.All => 48,
-                CatalogCategoryFilter.Other => 66,
+                null => 48,
+                SupportedBuffItemCategory.Other => 66,
                 _ => CategoryIconButtonWidth
             };
         }
 
-        private static int GetCategoryIconItemId(CatalogCategoryFilter category)
+        private static int GetCategoryIconItemId(SupportedBuffItemCategory? category)
         {
             return category switch
             {
-                CatalogCategoryFilter.Potions => ItemID.IronskinPotion,
-                CatalogCategoryFilter.Food => ItemID.CookedFish,
-                CatalogCategoryFilter.Flasks => ItemID.FlaskofFire,
+                SupportedBuffItemCategory.Potion => ItemID.IronskinPotion,
+                SupportedBuffItemCategory.Food => ItemID.CookedFish,
+                SupportedBuffItemCategory.Flask => ItemID.FlaskofFire,
                 _ => 0
             };
-        }
-
-        private static string GetCategoryLabel(CatalogCategoryFilter category)
-        {
-            switch (category)
-            {
-                case CatalogCategoryFilter.Potions:
-                    return "Potions";
-
-                case CatalogCategoryFilter.Food:
-                    return "Food";
-
-                case CatalogCategoryFilter.Flasks:
-                    return "Flasks";
-
-                case CatalogCategoryFilter.Other:
-                    return "Other";
-
-                default:
-                    return "All";
-            }
         }
 
         private void DrawListSection(int x, int y, int width, int height)
@@ -735,7 +658,7 @@ namespace AutoReapplyPotions
 
         private void DrawCatalogList(int x, int y, int width, int height)
         {
-            int totalHeight = _filteredCatalog.Count * RowHeight;
+            int totalHeight = _results.Catalog.Count * RowHeight;
             _catalogScroll.Begin(x, y, width, height, totalHeight);
 
             try
@@ -744,10 +667,10 @@ namespace AutoReapplyPotions
                 int contentY = _catalogScroll.ContentY;
                 int contentWidth = _catalogScroll.ContentWidth;
 
-                if (_filteredCatalog.Count == 0)
+                if (_results.Catalog.Count == 0)
                     DrawEmptyListMessage("No matching items", contentX, contentY, contentWidth);
 
-                for (var i = 0; i < _filteredCatalog.Count; i++)
+                for (var i = 0; i < _results.Catalog.Count; i++)
                 {
                     int itemOffsetY = i * RowHeight;
 
@@ -755,7 +678,7 @@ namespace AutoReapplyPotions
                         continue;
 
                     int rowY = contentY + itemOffsetY;
-                    DrawItemRow(_filteredCatalog[i], contentX, rowY, contentWidth);
+                    DrawItemRow(_results.Catalog[i], contentX, rowY, contentWidth);
                 }
             }
             finally
@@ -766,7 +689,7 @@ namespace AutoReapplyPotions
 
         private void DrawSelectedList(int x, int y, int width, int height)
         {
-            int totalHeight = _selectedItems.Count * RowHeight;
+            int totalHeight = _results.Selected.Count * RowHeight;
             _selectedScroll.Begin(x, y, width, height, totalHeight);
 
             try
@@ -775,7 +698,7 @@ namespace AutoReapplyPotions
                 int contentY = _selectedScroll.ContentY;
                 int contentWidth = _selectedScroll.ContentWidth;
 
-                if (_selectedItems.Count == 0)
+                if (_results.Selected.Count == 0)
                 {
                     string emptyMessage = ItemFilterSettings.FilteredItemIds.Count == 0
                         ? "No items selected"
@@ -783,7 +706,7 @@ namespace AutoReapplyPotions
                     DrawEmptyListMessage(emptyMessage, contentX, contentY, contentWidth);
                 }
 
-                for (var i = 0; i < _selectedItems.Count; i++)
+                for (var i = 0; i < _results.Selected.Count; i++)
                 {
                     int itemOffsetY = i * RowHeight;
 
@@ -791,7 +714,7 @@ namespace AutoReapplyPotions
                         continue;
 
                     int rowY = contentY + itemOffsetY;
-                    DrawItemRow(_selectedItems[i], contentX, rowY, contentWidth);
+                    DrawItemRow(_results.Selected[i], contentX, rowY, contentWidth);
                 }
             }
             finally
@@ -854,59 +777,21 @@ namespace AutoReapplyPotions
                 RebuildLists(resetScroll: false);
             }
         }
-
-        private static IEnumerable<SupportedBuffItemInfo> ApplySearchFilter(
-            IEnumerable<SupportedBuffItemInfo> source,
-            string searchText)
-        {
-            string search = (searchText ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(search))
-                return source;
-
-            string lower = search.ToLowerInvariant();
-
-            return source.Where(x =>
-                (!string.IsNullOrWhiteSpace(x.ItemName) && x.ItemName.ToLowerInvariant().Contains(lower)) ||
-                x.ItemId.ToString().Contains(lower) ||
-                x.Category.ToString().ToLowerInvariant().Contains(lower));
-        }
-
-        private static IEnumerable<SupportedBuffItemInfo> ApplyCategoryFilter(
-            IEnumerable<SupportedBuffItemInfo> source,
-            CatalogCategoryFilter category)
-        {
-            switch (category)
-            {
-                case CatalogCategoryFilter.Potions:
-                    return source.Where(x => x.Category == SupportedBuffItemCategory.Potion);
-
-                case CatalogCategoryFilter.Food:
-                    return source.Where(x => x.Category == SupportedBuffItemCategory.Food);
-
-                case CatalogCategoryFilter.Flasks:
-                    return source.Where(x => x.Category == SupportedBuffItemCategory.Flask);
-
-                case CatalogCategoryFilter.Other:
-                    return source.Where(x => x.Category == SupportedBuffItemCategory.Other);
-
-                default:
-                    return source;
-            }
-        }
     }
 
     // Keep this input decision independent of Terraria/Core UI so it can be tested without the game runtime.
     internal static class FilterEditorClickAwayPolicy
     {
-        internal static bool IsEligiblePress(
+        internal static bool ShouldReleaseFocus(
             bool hasTextFocus,
-            bool inputBlocked,
+            bool pointerOverSearch,
             bool mouseLeftClick,
             bool mouseLeftDown,
             bool wasMouseLeftDown)
         {
-            // The normal click signal can be consumed by another widget before this panel receives it.
-            return !inputBlocked && hasTextFocus && (mouseLeftClick || (mouseLeftDown && !wasMouseLeftDown));
+            // A higher panel masks the Core click and hover, but the physical press still transfers focus.
+            bool pointerPressed = mouseLeftClick || (mouseLeftDown && !wasMouseLeftDown);
+            return hasTextFocus && pointerPressed && !pointerOverSearch;
         }
     }
 }

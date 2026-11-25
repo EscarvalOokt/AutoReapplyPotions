@@ -22,6 +22,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\AutoReapplyPotions\AutoReapplyPotions.csproj"/>
+        <ProjectReference Include="..\..\src\AutoReapplyPotions\AutoReapplyPotions.csproj">
+            <!-- A normal solution build deploys through the production project when requested. -->
+            <AdditionalProperties Condition="'$(BuildingSolutionFile)' != 'true' Or '$(VSTestSessionCorrelationId)' != ''">DeployToGame=false</AdditionalProperties>
+        </ProjectReference>
     </ItemGroup>
 </Project>

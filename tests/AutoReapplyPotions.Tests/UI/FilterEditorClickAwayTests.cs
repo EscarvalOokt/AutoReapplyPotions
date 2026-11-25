@@ -13,10 +13,10 @@ namespace AutoReapplyPotions.Tests.UI
             true,
             false,
             true,
-            TestName = "ConsumedClickSignal_PhysicalPressEdgeTriggersClickAway")]
+            TestName = "HigherPanelMasksClickAndHover_PhysicalPressReleasesSearch")]
         [TestCase(true, false, false, true, true, false, TestName = "HeldMouseButton_DoesNotRepeatClickAway")]
         [TestCase(false, false, true, true, false, false, TestName = "UnfocusedSearch_DoesNotTriggerClickAway")]
-        [TestCase(true, true, true, true, false, false, TestName = "HigherPriorityPanel_BlocksClickAway")]
+        [TestCase(true, true, true, true, false, false, TestName = "PressInsideSearch_KeepsFocus")]
         [TestCase(
             true,
             false,
@@ -25,17 +25,17 @@ namespace AutoReapplyPotions.Tests.UI
             true,
             false,
             TestName = "ReleasedMouseWithoutClick_DoesNotTriggerClickAway")]
-        public void IsEligiblePress_RespectsFocusAndMouseOwnership(
+        public void ShouldReleaseFocus_RespectsFocusAndMouseOwnership(
             bool hasTextFocus,
-            bool inputBlocked,
+            bool pointerOverSearch,
             bool mouseLeftClick,
             bool mouseLeftDown,
             bool wasMouseLeftDown,
             bool expected)
         {
-            bool actual = FilterEditorClickAwayPolicy.IsEligiblePress(
+            bool actual = FilterEditorClickAwayPolicy.ShouldReleaseFocus(
                 hasTextFocus,
-                inputBlocked,
+                pointerOverSearch,
                 mouseLeftClick,
                 mouseLeftDown,
                 wasMouseLeftDown);

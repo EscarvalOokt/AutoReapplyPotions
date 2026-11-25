@@ -8,25 +8,26 @@ namespace AutoReapplyPotions
     // ReSharper disable once ClassNeverInstantiated.Global
     public sealed class AutoReapplyPotionsMod : IMod, IModLifecycle
     {
+        private static bool _initialized;
         private FilterUiController _filterUi;
         internal static ModContext Context { get; private set; }
         internal static AutoReapplyPotionsConfig Config { get; private set; }
-
-        internal static bool IsEnabled { get; private set; } = true;
+        private static bool IsEnabled { get; set; }
+        internal static bool CanAutoReapply => _initialized && IsEnabled;
 
         public bool DebugModeEnabled { get; private set; }
 
         public string Id => "auto-reapply-potions";
         public string Name => "Auto Reapply Potions";
-        public string Version => "1.2.0";
+        public string Version => "1.3.0";
 
         public void Initialize(ModContext context)
         {
+            _initialized = false;
             Context = context;
             Config = context.GetConfig<AutoReapplyPotionsConfig>() ??
                      throw new InvalidOperationException("AutoReapplyPotionsConfig was not loaded by TerrariaModder.");
 
-            BuffReapplyDetector.Reset();
             LoadConfig();
 
             _filterUi = new FilterUiController();
@@ -61,11 +62,13 @@ namespace AutoReapplyPotions
                 (Action)OnReduceRandomBuffKeyPressed);
 
             ModLog.Info($"Initialized. Enabled={IsEnabled}, Debug={DebugModeEnabled}");
+            _initialized = true;
         }
 
         public void Unload()
         {
-            BuffReapplyDetector.Reset();
+            _initialized = false;
+            IsEnabled = false;
 
             try
             {
@@ -74,7 +77,6 @@ namespace AutoReapplyPotions
             finally
             {
                 _filterUi = null;
-                IsEnabled = true;
                 Config = null;
                 Context = null;
             }
@@ -87,7 +89,6 @@ namespace AutoReapplyPotions
 
         public void OnWorldLoad()
         {
-            BuffReapplyDetector.Reset();
             SupportedBuffItemsCatalog.Invalidate();
             _filterUi?.RefreshFromConfig();
             ModLog.Info("World loaded.");
@@ -95,7 +96,6 @@ namespace AutoReapplyPotions
 
         public void OnWorldUnload()
         {
-            BuffReapplyDetector.Reset();
             ModLog.Info("World unloaded.");
         }
 
@@ -115,7 +115,7 @@ namespace AutoReapplyPotions
             IsEnabled = Config.ModEnabled;
             DebugModeEnabled = Config.DebugModeEnabled;
 
-            ItemFilterMode filterMode = ParseItemFilterMode(Config.ItemFilterMode);
+            ItemFilterMode filterMode = ItemFilterSettings.ParseMode(Config.ItemFilterMode);
 
             List<int> parsedIds = ItemFilterSettings.ParseItemIds(Config.FilteredItemIds);
             ItemFilterSettings.Update(filterMode, parsedIds);
@@ -181,17 +181,6 @@ namespace AutoReapplyPotions
         private void OnOpenFilterUiKeyPressed()
         {
             _filterUi?.Toggle();
-        }
-
-        private static ItemFilterMode ParseItemFilterMode(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw))
-                return ItemFilterMode.Disabled;
-
-            if (Enum.TryParse(raw, ignoreCase: true, out ItemFilterMode result))
-                return result;
-
-            return ItemFilterMode.Disabled;
         }
     }
 }

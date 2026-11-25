@@ -6,8 +6,14 @@ namespace AutoReapplyPotions
     {
         public static bool TryReapplyBuff(Player player, int expiredBuffId)
         {
-            bool isInvalidInput = player == null || expiredBuffId <= 0;
-            if (isInvalidInput)
+            if (player == null || expiredBuffId <= 0)
+                return false;
+
+            if (player.dead ||
+                player.cursed ||
+                player.CCed ||
+                player.spectating >= 0 ||
+                Main.LocalPlayerHasPendingInventoryActions())
                 return false;
 
             int slot = FindMatchingBuffItemSlot(player, expiredBuffId);
@@ -55,7 +61,7 @@ namespace AutoReapplyPotions
 
         private static Item FindMatchingBuffItemInVoidBag(Player player, int buffId)
         {
-            if (!player.useVoidBag() || Main.LocalPlayerHasPendingInventoryActions())
+            if (!player.useVoidBag())
                 return null;
 
             Chest bank4 = player.bank4;

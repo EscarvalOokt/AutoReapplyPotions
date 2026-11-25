@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.ID;
 
 namespace AutoReapplyPotions
 {
@@ -83,16 +84,17 @@ namespace AutoReapplyPotions
             int buffType = player.buffType[index];
             int buffTime = player.buffTime[index];
 
-            if (buffType <= 0)
+            if (buffType <= 0 || buffType >= BuffID.Count || buffTime <= FiveSecondsInTicks)
                 return false;
 
-            if (buffTime <= 0)
+            if (BuffID.Sets.TimeLeftDoesNotDecrease[buffType] ||
+                BuffID.Sets.MountType[buffType] >= 0 ||
+                Main.vanityPet[buffType] ||
+                Main.lightPet[buffType])
                 return false;
 
-            if (buffTime <= FiveSecondsInTicks)
-                return false;
-
-            return true;
+            // Summons maintain hidden timers. Timed debuffs can also have a hidden countdown.
+            return !Main.buffNoTimeDisplay[buffType] || Main.debuff[buffType];
         }
     }
 }
