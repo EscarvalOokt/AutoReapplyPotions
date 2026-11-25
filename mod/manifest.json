@@ -6,6 +6,6 @@
     "description": "Automatically reapplies potions, food, and flasks from your inventory or Void Bag when their buffs expire. Choose which items to use in the in-game filter editor.",
     "entry_dll": "AutoReapplyPotions.dll",
     "homepage": "https://www.nexusmods.com/terraria/mods/169",
-    "terraria_version": "1.4.6.1",
+    "terraria_version": "1.4.6",
     "framework_version": ">=0.4.3"
 }
