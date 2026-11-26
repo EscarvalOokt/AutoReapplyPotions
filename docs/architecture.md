@@ -1,25 +1,20 @@
 # Auto Reapply Potions architecture
 
-This document defines the accepted architecture and implementation boundaries of Auto Reapply Potions.
-It describes the current production baseline; it is not a Roadmap or an implementation guide.
+This document describes the runtime behavior of Auto Reapply Potions and the responsibilities of its components.
 
 ## Sources of truth
 
-1. The installed Terraria and TerrariaModder runtime define external runtime behavior and API contracts.
-2. The [manifest](../mod/manifest.json) declares the runtime requirements. The [production project](../src/AutoReapplyPotions/AutoReapplyPotions.csproj) defines the build target and references, and its source defines the mod's behavior.
-3. This document records accepted project architecture and boundaries.
-4. The [development guide](development.md) covers local setup and build commands. The [testing policy](testing.md) defines automated testing and in-game acceptance boundaries.
-
-When documentation and production code disagree about current project behavior, production code is the source of truth until the discrepancy is resolved explicitly.
+- The [manifest](../mod/manifest.json) declares runtime requirements. The [production project](../src/AutoReapplyPotions/AutoReapplyPotions.csproj) defines the build target and references.
+- Terraria and TerrariaModder define the external APIs. The production source defines how the mod uses them, and the [configuration model](../src/AutoReapplyPotions/AutoReapplyPotionsConfig.cs) defines its settings.
+- The [development guide](development.md) covers local setup, build, and test commands. The [testing policy](testing.md) describes automated coverage and in-game checks.
 
 ## Runtime baseline
 
-- The manifest for version `1.3.0` specifies Terraria `1.4.6.1` and TerrariaModder Core `>=0.4.3`.
+- The manifest for version `1.3.0` specifies Terraria `1.4.6` and TerrariaModder Core `>=0.4.3`.
 - The tested Windows configuration used Terraria `1.4.6.1` and Core `0.4.3`.
-- .NET Framework 4.8.
-- TerrariaModder provides mod lifecycle, configuration, keybind, logging, and UI infrastructure.
-- Harmony is used for runtime patching of Terraria behavior.
-- TerrariaWindowKit v1.1.0 is integrated source-only through `TerrariaWindowKit.Source.projitems` with Core integration enabled. It does not require a separate toolkit DLL.
+- The production project targets .NET Framework 4.8.
+- TerrariaModder Core provides lifecycle callbacks, configuration, logging, and UI services. Harmony provides runtime method patching.
+- The production project imports TerrariaWindowKit sources with Core integration enabled. The build uses the revision present in the sibling checkout and compiles it into `AutoReapplyPotions.dll`.
 
 ## Runtime flow
 
@@ -35,12 +30,12 @@ The detector processes the local active player, and the existing reentrancy guar
 
 ## Filter Editor and window integration
 
-- `FilterUiController` displays the Catalog and Selected views, handles search and selection, and saves the filter mode and selected item IDs through TerrariaModder configuration. It uses TerrariaModder.Core `TextInput`, `TabBar`, `ScrollView`, `Button`, `Checkbox`, renderer, colors, and tooltips.
+- `FilterUiController` displays the Catalog and Selected views, handles search and selection, and saves the filter mode and selected item IDs through TerrariaModder configuration. TerrariaModder Core provides its widgets, rendering, and tooltips.
 - On first opening the editor, the UI thread creates a `CoreWindowBackend` connected through `SharedCoordinator.Connect()` and a `WindowHost` with identity `auto-reapply-potions:filter`.
 - The window is draggable and pinnable but not manually resizable. The compact layout uses a base size of 520 x 420 UI units, with width adjustment for readable mode labels.
-- `WindowHost` and `CoreWindowBackend` coordinate pointer, wheel, text focus, Escape, and Pin behavior with other WindowKit consumers. `CorePinButtonRenderer` draws the shared Pin/Unpin control; the mod does not implement a second window coordinator.
+- `WindowHost` and `CoreWindowBackend` coordinate pointer, wheel, text focus, Escape, and Pin behavior with other WindowKit consumers. `CorePinButtonRenderer` draws the shared Pin/Unpin control.
 - `FilterEditorClickAwayPolicy` handles the project-owned Search click-away decision, including a physical mouse press edge when the normal click signal has already been consumed by another widget.
-- When the mod unloads, it closes the lifecycle gate and disposes the window host before its backend. On world load it invalidates the item catalog and refreshes the editor. Expiration tracking is scoped to the current player update.
+- When the mod unloads, it closes the lifecycle gate and disposes the window host before its backend. On world load it invalidates the item catalog and refreshes the editor.
 
 ## Supporting subsystems
 
@@ -54,9 +49,5 @@ The detector processes the local active player, and the existing reentrancy guar
 
 ## Project boundaries
 
-- Production source remains in one .NET Framework 4.8 project; WindowKit sources are imported rather than deployed as a separate library.
-- Conceptual subsystems should not become additional layers or projects without a concrete implementation need.
-- Shared eligibility rules belong in `AutoReapplyRules`; filtering rules belong in `ItemFilterSettings` rather than being duplicated at call sites.
-- TerrariaModder.Core and TerrariaWindowKit supply UI widgets, styling, window lifecycle, and input coordination rather than a parallel UI framework.
-- The Void Bag extension adds no new configuration field, independent item storage, save format, or custom multiplayer synchronization. Native persistence and network code paths are not evidence that mod-specific multiplayer synchronization has been verified.
-- Machine-specific game/framework paths belong only in `src/AutoReapplyPotions.Local.props` and must not be committed.
+- `AutoReapplyRules` determines which buffs and items qualify. `ItemFilterSettings` applies the configured filter to both inventory sources.
+- The inventory and Void Bag paths use Terraria's existing item stacks and the same filter settings. Terraria owns storage, persistence, and networking. Multiplayer synchronization has not been separately verified.

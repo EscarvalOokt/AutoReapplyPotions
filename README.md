@@ -1,6 +1,6 @@
 # Auto Reapply Potions
 
-![Auto Reapply Potions preview](assets/AutoReapplyPotions_Preview.png)
+![Auto Reapply Potions preview](assets/nexus/Preview.png)
 
 **Keep your buffs active without constantly reusing consumables.**
 
@@ -47,25 +47,17 @@ The mod does not automatically reapply:
 
 The built-in Filter Editor lets you control which supported items may be consumed automatically.
 
-Open the editor with the **Open Filter UI** keybind, which defaults to **Alt + 2**.
+Open the editor with the **Open Filter UI** keybind and choose a filter mode.
 
-### Disabled
+- **Disabled** allows all supported items.
+- **Blacklist** excludes selected items from automatic use.
+- **Whitelist** allows only selected items. An empty whitelist prevents automatic reapplication.
 
-The filter is ignored and all supported items may be used.
-
-### Blacklist
-
-Selected items are excluded from automatic use.
-
-### Whitelist
-
-Only selected items may be used automatically. An empty whitelist prevents automatic reapplication.
-
-The Filter Editor includes:
+The Filter Editor includes the following tools.
 
 - Search by item name, ID, or category within the selected category. An empty search result keeps that category selected.
 - Catalog and Selected views, with available Potions, Food, Flasks, and Other categories.
-- **Select results**, **Clear results**, and **Clear all** actions. Select results and Clear results affect all matching items, including those outside the visible scroll area.
+- **Select results** adds every matching item to the selection. **Clear results** removes every matching item from it. Both actions include rows outside the visible scroll area. **Clear all** clears the entire selection.
 - Item previews and tooltips.
 - A compact, draggable window with **Pin/Unpin** controls.
 
@@ -94,21 +86,21 @@ Press **F6** and select **Auto Reapply Potions** to open its settings.
 
 ## Requirements
 
-- **Terraria 1.4.6.1** for Windows.
-- **TerrariaModder Core 0.4.3 or newer.** Choose a Core release that meets this requirement from [Nexus Mods](https://www.nexusmods.com/terraria/mods/135?tab=files) or [GitHub Releases](https://github.com/Inidar1/terraria-modder/releases).
+- **Terraria 1.4.6** for Windows.
+- **TerrariaModder Core 0.4.3 or newer.** Choose a compatible Core release from [Nexus Mods](https://www.nexusmods.com/terraria/mods/135?tab=files) or [GitHub Releases](https://github.com/Inidar1/terraria-modder/releases).
 - [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/net48).
 
 ## Installation
 
-1. Close Terraria. Install any missing dependencies listed under [Requirements](#requirements). To install TerrariaModder Core manually, extract its archive into the folder containing `Terraria.exe`.
-2. Download the Auto Reapply Potions archive for your Terraria version from either source.
+1. Close Terraria and install any missing dependencies listed under [Requirements](#requirements). For a manual TerrariaModder Core installation, extract the Core archive into the folder containing `Terraria.exe`.
+2. Download the Auto Reapply Potions archive for your Terraria version.
 
    - On [Nexus Mods](https://www.nexusmods.com/terraria/mods/169?tab=files), select **Manual download** for the main file.
    - On the [latest GitHub release](https://github.com/EscarvalOokt/AutoReapplyPotions/releases/latest), download the packaged mod from **Assets**.
 
 3. In your Terraria installation folder, open `TerrariaModder\mods\`. Create the `mods` folder if needed.
-4. Open the downloaded mod archive and copy the entire `auto-reapply-potions` folder into `mods`. If you are updating, replace the existing DLL and manifest with the copies from the new archive.
-5. Launch `TerrariaInjector.exe` from the Terraria installation folder.
+4. Open the mod archive and copy its `auto-reapply-potions` folder into `mods`. When updating, replace the existing `AutoReapplyPotions.dll` and `manifest.json` with the copies from the new archive.
+5. Run `TerrariaInjector.exe` from the folder containing `Terraria.exe`, or launch the modded game from TerrariaModder Vault.
 6. Enter a world and press **Alt + 2** to open the Filter Editor.
 
 After installation, the mod files should be in the following locations.

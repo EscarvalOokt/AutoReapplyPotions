@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- A .NET SDK and the .NET Framework 4.8 development tools for building the `net48` solution on Windows.
+- A .NET SDK with a C# 12 or later compiler, such as .NET SDK 8, and the .NET Framework 4.8 development tools for building the `net48` solution on Windows.
 - A local installation of [Terraria and TerrariaModder Core](../README.md#requirements). The project references `Terraria.exe`, `TerrariaModder.Core.dll`, and the `0Harmony.dll` distributed with Core.
 - The XNA Framework assemblies `Microsoft.Xna.Framework.dll` and `Microsoft.Xna.Framework.Game.dll`.
 - A [TerrariaWindowKit](https://github.com/EscarvalOokt/TerrariaWindowKit) v1.1.0 checkout in a folder named `TerrariaWindowKit` alongside `AutoReapplyPotions`.
